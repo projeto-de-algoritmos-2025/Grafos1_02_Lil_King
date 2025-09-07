@@ -12,11 +12,17 @@ def colocar_aldeias(grade, posicoes, ids=None):
         grade[r, c] = v
     return grade
 
+def colocar_comidas(grade, posicoes):
+    for (r, c) in posicoes:
+        grade[r, c] = 3
+    return grade
+
 def mostrar_grade(grade):
     alt, larg = grade.shape
 
-    cores = mcolors.ListedColormap(["lightgrey", "purple", "orange"])
-    limites = [-0.5, 0.5, 1.5, 2.5]
+    cores = mcolors.ListedColormap(["lightgrey", "purple", "orange", "green"]) 
+    limites = [-0.5, 0.5, 1.5, 2.5, 3.5]
+
     normalizacao = mcolors.BoundaryNorm(limites, cores.N)
 
     figura, eixo = plt.subplots()
@@ -36,5 +42,7 @@ def mostrar_grade(grade):
 # teste
 alt, larg = 10, 15
 g = criar_grade(alt, larg)
-g = colocar_aldeias(g, [(2, 2), (7, 12)], ids=[1, 2])  
+g = colocar_aldeias(g, [(2, 2), (7, 12)], ids=[1, 2])
+g = colocar_comidas(g, [(1, 4), (3, 10), (8, 2)])
+
 mostrar_grade(g)
