@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
-from collections import deque  
+from collections import deque
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox  
 
 def criar_grade(alt, larg):
     return np.zeros((alt, larg), dtype=int)
@@ -11,6 +12,21 @@ def configurar_cores_grade():
     limites = [-0.5, 0.5, 1.5, 2.5, 3.5]
     normalizacao = mcolors.BoundaryNorm(limites, cores.N)
     return cores, normalizacao
+
+def carregar_imagens():
+    import matplotlib.image as mpimg
+    import os
+    
+    base_path = os.path.dirname(__file__)
+    assets_path = os.path.join(base_path, 'assets')
+    
+    imagens = {}
+    imagens['castelo'] = mpimg.imread(os.path.join(assets_path, 'castelo.png'))
+    imagens['cabana'] = mpimg.imread(os.path.join(assets_path, 'cabana.png'))
+    imagens['cavaleiro'] = mpimg.imread(os.path.join(assets_path, 'cavaleiro.png'))
+    imagens['goblin'] = mpimg.imread(os.path.join(assets_path, 'goblin.png'))
+    
+    return imagens
 
 def configurar_grid_visual(eixo, altura, largura):
     eixo.set_xticks(np.arange(-0.5, largura, 1), minor=True)
@@ -123,22 +139,43 @@ def animar_aldeoes(grade, total_passos=60, tempo_pausa=0.08):
     posicao_aldeao1 = base_aldeia1
     posicao_aldeao2 = base_aldeia2
 
+    imagens = carregar_imagens()
+
     plt.ion()  
     cores, normalizacao = configurar_cores_grade()
 
-    figura, eixo = plt.subplots()
+    figura, eixo = plt.subplots(figsize=(12, 8))  
     eixo.imshow(grade, cmap=cores, norm=normalizacao)
     
     configurar_grid_visual(eixo, altura, largura)
 
-    marcadores = eixo.scatter([], [], s=120, c=[], edgecolors="white", linewidths=1.0)
+    zoom_aldeia = 0.042   
+    zoom_personagem = 0.042  
+
+    castelo_img = OffsetImage(imagens['castelo'], zoom=zoom_aldeia)
+    cabana_img = OffsetImage(imagens['cabana'], zoom=zoom_aldeia)
+    
+    castelo_box = AnnotationBbox(castelo_img, (base_aldeia1[1], base_aldeia1[0]), frameon=False)
+    cabana_box = AnnotationBbox(cabana_img, (base_aldeia2[1], base_aldeia2[0]), frameon=False)
+    
+    eixo.add_artist(castelo_box)
+    eixo.add_artist(cabana_box)
+
+    cavaleiro_img = OffsetImage(imagens['cavaleiro'], zoom=zoom_personagem)
+    goblin_img = OffsetImage(imagens['goblin'], zoom=zoom_personagem)
+    
+    cavaleiro_box = AnnotationBbox(cavaleiro_img, (posicao_aldeao1 [1], posicao_aldeao1 [0]), frameon=False)
+    goblin_box = AnnotationBbox(goblin_img, (posicao_aldeao2[1], posicao_aldeao2[0]), frameon=False)
+    
+    eixo.add_artist(cavaleiro_box)
+    eixo.add_artist(goblin_box)
 
     for passo in range(total_passos):
         destino_aldeao1 = destinos_bfs[indice_bfs]
         destino_aldeao2 = destinos_dfs[indice_dfs]
 
         if posicao_aldeao1 != destino_aldeao1:
-            posicao_aldeao1 = mover_um_passo(posicao_aldeao1, destino_aldeao1)
+            posicao_aldeao1 = mover_um_passo(posicao_aldeao1 , destino_aldeao1)
         else:
             indice_bfs = (indice_bfs + 1) % len(destinos_bfs)
 
@@ -147,12 +184,8 @@ def animar_aldeoes(grade, total_passos=60, tempo_pausa=0.08):
         else:
             indice_dfs = (indice_dfs + 1) % len(destinos_dfs)
 
-        posicoes_x = [posicao_aldeao1[1], posicao_aldeao2[1]]  
-        posicoes_y = [posicao_aldeao1[0], posicao_aldeao2[0]]  
-        cores_aldeoes = ["purple", "orange"]  
-        
-        marcadores.set_offsets(np.c_[posicoes_x, posicoes_y])
-        marcadores.set_color(cores_aldeoes)
+        cavaleiro_box.xybox = (posicao_aldeao1 [1], posicao_aldeao1 [0])
+        goblin_box.xybox = (posicao_aldeao2[1], posicao_aldeao2[0])
 
         figura.canvas.draw()
         figura.canvas.flush_events()
